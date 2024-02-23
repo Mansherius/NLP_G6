@@ -39,6 +39,7 @@ def processSentence(df, row):
     sentence = ' '.join(sentence)
     return sentence
 
+'''
 # Now we Process the data. For now let us only work on the head of the dataframe
 for i in range(1):
     sentence = processSentence(data, i)
@@ -55,13 +56,31 @@ for i in range(1):
             ner = 'O'
 
         print(txt, pos, ner)
+'''
 
 # Now that we know this works, we have to process the entire dataset as well as output the results to a new csv file in a concise format
-# The new csv file will have the following columns:
+# The dataframe will have the following columns:
 # 1. Sentence_ID
 # 2. Word
 # 3. POS
 # 4. Tag
 
-# The new csv file will be saved in the following path: NLP - 6th Sem/NER_dataset_processed.csv
+# The Sentence_ID will be the index of the dataframe
 
+newDF = pd.DataFrame(columns=['Sentence_ID', 'Word', 'POS', 'Tag'])
+for i in range(5):
+    sentence = processSentence(data, i)
+    doc = nlp(sentence)
+    for token in doc:
+        txt = token.text
+        pos = token.tag_
+        ner = token.ent_type_ if token.ent_type_ else 'O'
+
+        rows = [{'Sentence_ID': i, 'Word': token.text, 'POS': token.tag_, 'Tag': token.ent_type_ if token.ent_type_ else 'O'} for token in doc]
+    
+        # Concatenating the rows to the newDF
+        newDF = pd.concat([newDF, pd.DataFrame(rows)], ignore_index=True)
+
+# Now we have to output the newDF to a new csv file
+newDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/NER_Dataset_Processed.csv', index=False)
+    

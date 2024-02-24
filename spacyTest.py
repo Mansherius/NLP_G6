@@ -30,7 +30,8 @@ from ast import literal_eval
 data = pd.read_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/NER_Dataset.csv')
 # Shape of the data -> (47959, 4)
 
-print(data.head())
+
+# print(data.head())
 
 # Creating a function to process the data from the dataset into a meangingful format
 def processSentence(df, row):
@@ -57,7 +58,7 @@ for i in range(1):
 
         print(txt, pos, ner)
 '''
-
+'''
 # Now that we know this works, we have to process the entire dataset as well as output the results to a new csv file in a concise format
 # The dataframe will have the following columns:
 # 1. Sentence_ID
@@ -77,7 +78,35 @@ for i in range(data.shape[0]):
 
     # Concatenating the rows to the newDF
     newDF = pd.concat([newDF, pd.DataFrame(rows)], ignore_index=True)
+    # Check to ensure the programming is still running as it has a long execution time
+    print("running row ", i)
 
 # Now we have to output the newDF to a new csv file
-newDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/NER_Dataset_Processed.csv', index=False)
+newDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/NER_Dataset_Processed_spaCy.csv', index=False)
+'''
+
+# Now the code to process the personal dataset that we have curated
+
+text_file_path = '/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/nlp_dataset.txt'
+
+# Read the text file and create a DataFrame
+with open(text_file_path, 'r', encoding='utf-8') as file:
+    sentences = file.readlines()
+
+df = pd.DataFrame({'Sentence': sentences})
+
+customDF = pd.DataFrame(columns=['Sentence_No', 'Word', 'POS', 'Tag'])
+
+for i in range(df.shape[0]):
+    sentence = df['Sentence'][i]
+    doc = nlp(sentence)
     
+    rows = [{'Sentence_No': i, 'Word': token.text, 'POS': token.tag_, 'Tag': token.ent_type_ if token.ent_type_ else 'O'} for token in doc]
+
+    # Concatenating the rows to the newDF
+    customDF = pd.concat([customDF, pd.DataFrame(rows)], ignore_index=True)
+    # Check to ensure the programming is still running as it has a long execution time
+    print("running row ", i)
+
+# Now we have to output the newDF to a new csv file
+customDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/Custom_Dataset_Processed_spaCy.csv', index=False)

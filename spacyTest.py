@@ -68,18 +68,15 @@ for i in range(1):
 # The Sentence_ID will be the index of the dataframe
 
 newDF = pd.DataFrame(columns=['Sentence_ID', 'Word', 'POS', 'Tag'])
-for i in range(5):
+
+for i in range(data.shape[0]):
     sentence = processSentence(data, i)
     doc = nlp(sentence)
-    for token in doc:
-        txt = token.text
-        pos = token.tag_
-        ner = token.ent_type_ if token.ent_type_ else 'O'
-
-        rows = [{'Sentence_ID': i, 'Word': token.text, 'POS': token.tag_, 'Tag': token.ent_type_ if token.ent_type_ else 'O'} for token in doc]
     
-        # Concatenating the rows to the newDF
-        newDF = pd.concat([newDF, pd.DataFrame(rows)], ignore_index=True)
+    rows = [{'Sentence_ID': data['Sentence_ID'][i], 'Word': token.text, 'POS': token.tag_, 'Tag': token.ent_type_ if token.ent_type_ else 'O'} for token in doc]
+
+    # Concatenating the rows to the newDF
+    newDF = pd.concat([newDF, pd.DataFrame(rows)], ignore_index=True)
 
 # Now we have to output the newDF to a new csv file
 newDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/NER_Dataset_Processed.csv', index=False)

@@ -58,7 +58,6 @@ for i in range(1):
 
         print(txt, pos, ner)
 '''
-'''
 # Now that we know this works, we have to process the entire dataset as well as output the results to a new csv file in a concise format
 # The dataframe will have the following columns:
 # 1. Sentence_ID
@@ -83,10 +82,9 @@ for i in range(data.shape[0]):
 
 # Now we have to output the newDF to a new csv file
 newDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/NER_Dataset_Processed_spaCy.csv', index=False)
-'''
 
 # Now the code to process the personal dataset that we have curated
-
+'''
 text_file_path = '/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/nlp_dataset.txt'
 
 # Read the text file and create a DataFrame
@@ -110,3 +108,4 @@ for i in range(df.shape[0]):
 
 # Now we have to output the newDF to a new csv file
 customDF.to_csv('/Users/manshersingh/Documents/Ashoka Coursework/NLP - 6th Sem/Custom_Dataset_Processed_spaCy.csv', index=False)
+'''

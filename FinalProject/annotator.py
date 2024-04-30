@@ -5,12 +5,11 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
 # Load the model
-classifier = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=None)
 
 # Load the dataset
-# df = pd.read_csv("Eminem_Lyrics.csv", sep='\t', comment='#', encoding="ISO-8859-1")
-df = pd.read_csv("spotify_millsongdata.csv")
-df = df.head(20)
+data = pd.read_csv(r'.\Eminem_Lyrics.csv', sep='\t', comment='#', encoding="ISO-8859-1")
+#df = pd.read_csv("spotify_millsongdata.csv")
+df = data.head(20)
 
 def clean_text(text, max_length=578):
     cleaned_text = ' '.join(text.split())
@@ -27,7 +26,7 @@ def clean_text(text, max_length=578):
     return padded_text
 
 # Clean the text
-df['text'] = df['text'].apply(clean_text)
+df['text'] = df['Lyrics'].apply(clean_text)
 
 # Now we have the dataset that we want to annotate
 

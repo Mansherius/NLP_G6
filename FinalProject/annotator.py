@@ -1,32 +1,26 @@
-from transformers import pipeline
+from transformers import RobertaTokenizerFast, TFRobertaForSequenceClassification, pipeline
 import pandas as pd
-import string
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
 # Load the model
+tokenizer = RobertaTokenizerFast.from_pretrained("arpanghoshal/EmoRoBERTa")
+model = TFRobertaForSequenceClassification.from_pretrained("arpanghoshal/EmoRoBERTa")
 
 # Load the dataset
-data = pd.read_csv(r'.\Eminem_Lyrics.csv', sep='\t', comment='#', encoding="ISO-8859-1")
-#df = pd.read_csv("spotify_millsongdata.csv")
-df = data.head(20)
+# df = pd.read_csv("Eminem_Lyrics.csv", sep='\t', comment='#', encoding="ISO-8859-1")
+df = pd.read_csv(".\EminemLyricsCleaned.csv", sep='\t', comment='#', encoding="ISO-8859-1")
 
-def clean_text(text, max_length=578):
-    cleaned_text = ' '.join(text.split())
-    cleaned_text = cleaned_text.lower()
-    cleaned_text = cleaned_text.translate(str.maketrans("", "", string.punctuation))
-    cleaned_text = ''.join([i for i in cleaned_text if not i.isdigit()])
-    cleaned_text = ''.join([i for i in cleaned_text if i.isalpha() or i.isspace()])
-    stop_words = set(stopwords.words('english'))
-    word_tokens = word_tokenize(cleaned_text)
-    cleaned_text = ' '.join([word for word in word_tokens if word.lower() not in stop_words])
-    
-    padded_text = cleaned_text.ljust(max_length)
-    
-    return padded_text
+# Now we need to go through each song's lyrics one by one and use the model to annotate them with the corresponding emotion
+emotion = pipeline('sentiment-analysis', 
+                    model='arpanghoshal/EmoRoBERTa')
 
-# Clean the text
-df['text'] = df['Lyrics'].apply(clean_text)
+# We will save the annotated lyrics in a new column in the dataframe
+df['Emotion'] = df['Lyrics'].apply(emotion)
+df['Emotion'] = df['Emotion'].apply(lambda x: x[0]['label'])
 
-# Now we have the dataset that we want to annotate
+# Drop unnecessary columns - link
+df = df.drop(columns=['Album_URL'])
+df = df.drop(columns=['Views'])
+df = df.drop(columns=['Release_date'])
 
+# Save the annotated dataframe to a new CSV file
+df.to_csv('EminemLyricsAnnotated.csv', sep='\t', index=False)

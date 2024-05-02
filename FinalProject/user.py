@@ -23,17 +23,60 @@ Predict the emotion of the lyrics of a song for the following:
 
 # Importing the necessary libraries
 import pandas as pd
-from classifier import model, tokenizer  # Import your trained model and tokenizer
 import torch
-from tqdm import tqdm  # Import tqdm for progress bar
+import torch.nn as nn
+from transformers import RobertaModel, RobertaTokenizer
+import mappings # Import the mappings file
+import tqdm as tqdm
 
-# Define sentiment analysis function
+# For us to be able to use the model defined in classifier.py, we need to import it here and define it's structure
+# Define the model architecture
+class SentimentClassifier(nn.Module):
+    def __init__(self, num_classes):
+        super(SentimentClassifier, self).__init__()
+        self.roberta = RobertaModel.from_pretrained('roberta-base')
+        self.drop = nn.Dropout(p=0.3)
+        self.out = nn.Linear(self.roberta.config.hidden_size, num_classes)
+    
+    def forward(self, input_ids, attention_mask):
+        outputs = self.roberta(input_ids=input_ids, attention_mask=attention_mask)
+        pooled_output = outputs.pooler_output  # Access the pooled output of RoBERTa
+        output = self.drop(pooled_output)
+        return self.out(output)
+
+# Load the tokenizer
+tokenizer = RobertaTokenizer.from_pretrained('tokenizer')
+
+# Define your model architecture again
+model = SentimentClassifier(num_classes=27)
+
+# Load the saved parameters into the model
+model.load_state_dict(torch.load('MusicClassifier.pth'))
+
+# Set the model to evaluation mode
+model.eval()
+
+# Define a function to predict the emotion of the lyrics
 def predict_emotion(text):
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
+    # Tokenize the input text
+    tokenized = tokenizer(text, truncation=True, padding='max_length', max_length=128, return_tensors='pt')
+    input_ids = tokenized['input_ids']
+    attention_mask = tokenized['attention_mask']
+    
+    # Make the prediction
     with torch.no_grad():
-        outputs = model(**inputs)
-    predicted_class = torch.argmax(outputs, dim=1).item()
-    return predicted_class
+        output = model(input_ids, attention_mask)
+    
+    # Get the predicted label
+    label_index = torch.argmax(output, dim=1).item()
+    
+    # Convert numerical label to emotion
+    predicted_emotion = mappings.index_to_emotion[label_index]
+    
+    # Return the predicted emotion
+    return predicted_emotion
+
+
 
 # Function to recommend songs based on the emotion of the lyrics
 def music_recommendation():
@@ -49,6 +92,7 @@ def music_recommendation():
 
     # Classify the emotion of the user input
     user_input_emotion = predict_emotion(user_input)
+    print("The emotion of the input is: ", user_input_emotion)
 
     # Get the songs with the same emotion as the user input
     songs = df[df['Emotion'] == user_input_emotion]
@@ -86,7 +130,10 @@ def playlist_generator():
     user_songs = pd.read_csv(file_path, sep='\t', comment='#', encoding="ISO-8859-1")
 
     # Classify the emotion of the lyrics of each song
-    user_songs['Emotion'] = user_songs['text'].apply(lambda x: predict_emotion(x))
+    # Add a progress bar using tqdm
+    user_songs['Emotion'] = ''
+    for index, row in tqdm.tqdm(user_songs.iterrows(), total=len(user_songs)):
+        user_songs.at[index, 'Emotion'] = predict_emotion(row['Lyrics'])
 
     # Club the songs into various groups based on the emotion of the lyrics
     playlists = user_songs.groupby('Emotion')
@@ -94,9 +141,14 @@ def playlist_generator():
     # Create playlists based on the emotions of the lyrics
     print("Here are the playlists based on the emotions of the lyrics:")
     for emotion, songs in playlists:
-        print(f"\nPlaylist for {emotion}:")
-        for song in songs['song'].unique():
-            print(f"• {song}")
+        # Encode the emotion string to UTF-8
+        emotion_utf8 = emotion.encode('utf-8', 'ignore').decode('utf-8')
+        print(f"\nPlaylist for {emotion_utf8}:")
+        for song in songs['Song_Name'].unique():
+            # Encode the song name string to UTF-8
+            song_utf8 = song.encode('utf-8', 'ignore').decode('utf-8')
+            print(f"• {song_utf8}")
+
 
 # Main function
 def main():
@@ -120,3 +172,10 @@ def main():
         cont = input("Do you want to continue using the program? (y/n): ")
         if cont.lower() != 'y':
             break
+
+    print("Thank you for using our program! Have a great day!")
+
+# Call the main function
+
+if __name__ == "__main__":
+    main()

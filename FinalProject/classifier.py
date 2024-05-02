@@ -27,7 +27,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 # Load data
 df = pd.read_csv("SpotifyLyricsAnnotated.csv", sep='\t', comment='#', encoding="ISO-8859-1")
-df = df.head(8000)  # Use 8000 rows for training
+df = df.head(1200)  # Use 8000 rows for training
 
 # Define a function to split lyrics into chunks
 def split_lyrics_into_chunks(lyrics, max_chunk_length):
@@ -70,6 +70,17 @@ emotions = [chunk['emotion'] for chunk in tokenized_lyrics]
 # Convert emotion labels to numerical format
 emotion_to_index = {emotion: index for index, emotion in enumerate(set(emotions))}
 numerical_emotions = [emotion_to_index[emotion] for emotion in emotions]
+
+# Convert numerical emotions to their emotions  
+index_to_emotion = {index: emotion for emotion, index in emotion_to_index.items()}
+
+# Store the mappings in a .py file called "mappings.py"
+# If mapping.py already exists, it will be overwritten
+with open('mappings.py', 'w') as f:
+    f.write(f'emotion_to_index = {emotion_to_index}\n')
+    f.write(f'index_to_emotion = {index_to_emotion}')
+
+
 
 # Convert numerical emotions to tensor
 emotion_tensor = torch.tensor(numerical_emotions)
@@ -160,10 +171,13 @@ for epoch in range(num_epochs):
 
     print(f'Epoch {epoch+1}/{num_epochs}, Loss: {val_loss}, Accuracy: {accuracy}')
 
+# At this point the model is trained and ready to be used for inference
+# However, since we intend on using the trained model in another script
+
+# Since we used torch, we will have to save the model and the tokenizer
+
 # Save the model
-torch.save(model.state_dict(), 'musicClassifier.pth')
-print("Model saved successfully!")
+torch.save(model.state_dict(), 'MusicClassifier.pth')
 
 # Save the tokenizer
 tokenizer.save_pretrained('tokenizer')
-print("Tokenizer saved successfully!")

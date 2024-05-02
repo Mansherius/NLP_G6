@@ -23,20 +23,22 @@ Predict the emotion of the lyrics of a song for the following:
 
 # Importing the necessary libraries
 import pandas as pd
-from transformers import pipeline
+from classifier import model, tokenizer  # Import your trained model and tokenizer
+import torch
 from tqdm import tqdm  # Import tqdm for progress bar
-from classifier import model, tokenizer
+
+# Define sentiment analysis function
+def predict_emotion(text):
+    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    predicted_class = torch.argmax(outputs, dim=1).item()
+    return predicted_class
 
 # Function to recommend songs based on the emotion of the lyrics
 def music_recommendation():
     # Load the dataset
     df = pd.read_csv("SpotifyLyricsAnnotated.csv", sep='\t', comment='#', encoding="ISO-8859-1")
-
-    # Load the emotion pipeline
-
-    # Find out how this works to see if ['label] is the correct way to get the emotion
-    emotion = pipeline('sentiment-analysis', 
-                        model=model)
 
     # Take the input from the user
     print("Some important information before you proceed:")
@@ -46,13 +48,13 @@ def music_recommendation():
     user_input = user_input.lower()
 
     # Classify the emotion of the user input
-    user_input_emotion = emotion(user_input)[0]['label']
+    user_input_emotion = predict_emotion(user_input)
 
     # Get the songs with the same emotion as the user input
     songs = df[df['Emotion'] == user_input_emotion]
 
     print("Here are some artists whose lyrics you might like, select one or more to get recommendations:")
-    # Print a bullet point list of the artists 
+    # Print a bullet point list of the artists
     for artist in songs['artist'].unique():
         print(f"• {artist}")
 
@@ -74,27 +76,17 @@ def playlist_generator():
     # Load the dataset
     df = pd.read_csv("SpotifyLyricsAnnotated.csv", sep='\t', comment='#', encoding="ISO-8859-1")
 
-    # Load the emotion pipeline
-    emotion = pipeline('sentiment-analysis', 
-                        model=model)
-
     # Take the input from the user
     print("Some important information before you proceed:")
     print("1. You need to provide a file that contains all your songs in a specific csv format.")
     print("2. The model will classify the emotion of the lyrics of each song and create playlists based on the emotions of the lyrics.")
     file_path = input("Enter the path of the file: (Be accurate with the path, it should be in the format 'path/to/file.csv')")
 
-    # Convert the file to a CSV if required
-    if file_path.endswith('.xlsx'):
-        user_songs = pd.read_excel(file_path)
-        file_path = file_path.replace('.xlsx', '.csv')
-        user_songs.to_csv(file_path, sep='\t', index=False)
-    
     # Load the user's songs
     user_songs = pd.read_csv(file_path, sep='\t', comment='#', encoding="ISO-8859-1")
 
     # Classify the emotion of the lyrics of each song
-    user_songs['Emotion'] = user_songs['text'].apply(lambda x: emotion(x)[0]['label'])
+    user_songs['Emotion'] = user_songs['text'].apply(lambda x: predict_emotion(x))
 
     # Club the songs into various groups based on the emotion of the lyrics
     playlists = user_songs.groupby('Emotion')
@@ -105,7 +97,6 @@ def playlist_generator():
         print(f"\nPlaylist for {emotion}:")
         for song in songs['song'].unique():
             print(f"• {song}")
-
 
 # Main function
 def main():
